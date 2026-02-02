@@ -1,66 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { APP_NAME } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
-
-// Conditionally import Clerk components
-const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-const clerkConfigured =
-  clerkKey && clerkKey !== "pk_test_placeholder" && clerkKey.startsWith("pk_");
-
-function AuthButtons() {
-  if (!clerkConfigured) {
-    return (
-      <>
-        <Link
-          href="/sign-in"
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Sign in
-        </Link>
-        <Link
-          href="/sign-up"
-          className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover transition-colors"
-        >
-          Get Started <ArrowRight className="h-4 w-4" />
-        </Link>
-      </>
-    );
-  }
-
-  // Use dynamic import approach to avoid build errors when Clerk isn't configured
-  const { SignedIn, SignedOut, UserButton } = require("@clerk/nextjs");
-
-  return (
-    <>
-      <SignedOut>
-        <Link
-          href="/sign-in"
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Sign in
-        </Link>
-        <Link
-          href="/sign-up"
-          className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover transition-colors"
-        >
-          Get Started <ArrowRight className="h-4 w-4" />
-        </Link>
-      </SignedOut>
-
-      <SignedIn>
-        <Link
-          href="/dashboard"
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Dashboard
-        </Link>
-        <UserButton afterSignOutUrl="/" />
-      </SignedIn>
-    </>
-  );
-}
 
 export function Navbar() {
   return (
@@ -80,7 +23,31 @@ export function Navbar() {
           >
             Pricing
           </Link>
-          <AuthButtons />
+
+          <SignedOut>
+            <Link
+              href="/sign-in"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Sign in
+            </Link>
+            <Link
+              href="/sign-up"
+              className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover transition-colors"
+            >
+              Get Started <ArrowRight className="h-4 w-4" />
+            </Link>
+          </SignedOut>
+
+          <SignedIn>
+            <Link
+              href="/dashboard"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Dashboard
+            </Link>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
         </div>
       </div>
     </nav>

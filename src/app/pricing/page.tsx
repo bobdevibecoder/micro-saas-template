@@ -3,6 +3,8 @@ import { APP_NAME } from "@/lib/utils";
 import Link from "next/link";
 import { Check, ArrowRight } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 const plans = [
   {
     name: "Free",

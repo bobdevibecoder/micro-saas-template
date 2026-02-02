@@ -4,6 +4,8 @@ import { APP_NAME } from "@/lib/utils";
 import Link from "next/link";
 import { ArrowRight, Zap, Shield, Code, Globe } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
