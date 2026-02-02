@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
+import { supabase } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -28,8 +29,20 @@ export async function POST(req: NextRequest) {
       const customerId = session.customer as string;
 
       if (clerkUserId) {
-        // TODO: Update user plan to 'pro' in Supabase when connected
-        console.log(`User ${clerkUserId} upgraded to Pro. Stripe customer: ${customerId}`);
+        // Upgrade user to Pro in Supabase
+        const { error } = await supabase
+          .from("users")
+          .update({
+            plan: "pro",
+            stripe_customer_id: customerId,
+          })
+          .eq("clerk_id", clerkUserId);
+
+        if (error) {
+          console.error(`Failed to upgrade user ${clerkUserId}: ${error.message}`);
+        } else {
+          console.log(`User ${clerkUserId} upgraded to Pro. Stripe customer: ${customerId}`);
+        }
       }
       break;
     }
@@ -38,18 +51,43 @@ export async function POST(req: NextRequest) {
       const subscription = event.data.object as Stripe.Subscription;
       const customerId = subscription.customer as string;
 
-      // TODO: Downgrade user plan to 'free' in Supabase when connected
-      console.log(`Subscription cancelled for customer: ${customerId}`);
+      // Downgrade user to Free and revoke API key
+      const { error } = await supabase
+        .from("users")
+        .update({
+          plan: "free",
+          api_key: null,
+        })
+        .eq("stripe_customer_id", customerId);
+
+      if (error) {
+        console.error(`Failed to downgrade customer ${customerId}: ${error.message}`);
+      } else {
+        console.log(`Subscription cancelled, customer ${customerId} downgraded to Free`);
+      }
       break;
     }
 
     case "customer.subscription.updated": {
       const subscription = event.data.object as Stripe.Subscription;
       const status = subscription.status;
+      const customerId = subscription.customer as string;
 
       if (status === "past_due" || status === "unpaid") {
-        // TODO: Handle payment failures
-        console.log(`Subscription payment issue for customer: ${subscription.customer}`);
+        // Downgrade user on payment failure
+        const { error } = await supabase
+          .from("users")
+          .update({
+            plan: "free",
+            api_key: null,
+          })
+          .eq("stripe_customer_id", customerId);
+
+        if (error) {
+          console.error(`Failed to handle payment issue for ${customerId}: ${error.message}`);
+        } else {
+          console.log(`Payment issue for customer ${customerId}, downgraded to Free`);
+        }
       }
       break;
     }

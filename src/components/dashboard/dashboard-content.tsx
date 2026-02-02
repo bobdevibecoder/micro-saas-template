@@ -1,25 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { Navbar } from "@/components/ui/navbar";
 import { HeroConverter } from "@/components/landing/hero-converter";
-import { Key, Copy, Check, RefreshCw, BarChart3 } from "lucide-react";
+import { Key, Copy, Check, RefreshCw, BarChart3, Crown, AlertCircle } from "lucide-react";
+import Link from "next/link";
+
+interface UserStats {
+  plan: "free" | "pro";
+  conversionsToday: number;
+  totalConversions: number;
+  apiKey: string | null;
+  remaining: number | "unlimited";
+  limit: number | "unlimited";
+}
 
 export function DashboardContent() {
   const { user } = useUser();
+  const [stats, setStats] = useState<UserStats | null>(null);
+  const [loading, setLoading] = useState(true);
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState("");
+
+  // Fetch user stats on mount
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const res = await fetch("/api/user/stats");
+        if (res.ok) {
+          const data: UserStats = await res.json();
+          setStats(data);
+          if (data.apiKey) setApiKey(data.apiKey);
+        }
+      } catch {
+        // Stats will stay null, showing defaults
+      }
+      setLoading(false);
+    }
+    fetchStats();
+  }, []);
 
   const generateKey = async () => {
     setGenerating(true);
+    setGenError("");
     try {
       const res = await fetch("/api/v1/generate-key", { method: "POST" });
       const data = await res.json();
-      if (data.apiKey) setApiKey(data.apiKey);
+      if (res.ok && data.apiKey) {
+        setApiKey(data.apiKey);
+      } else {
+        setGenError(data.error || "Failed to generate key");
+      }
     } catch {
-      // handle error silently
+      setGenError("Network error");
     }
     setGenerating(false);
   };
@@ -30,6 +66,11 @@ export function DashboardContent() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const plan = stats?.plan || "free";
+  const conversionsToday = stats?.conversionsToday ?? 0;
+  const totalConversions = stats?.totalConversions ?? 0;
+  const limit = plan === "pro" ? "∞" : "10";
 
   return (
     <div className="min-h-screen bg-background">
@@ -53,21 +94,39 @@ export function DashboardContent() {
               <BarChart3 className="h-5 w-5 text-primary" />
               <span className="text-sm text-muted-foreground">Today&apos;s Conversions</span>
             </div>
-            <p className="text-2xl font-bold">0 / 10</p>
+            <p className="text-2xl font-bold">
+              {loading ? "—" : `${conversionsToday} / ${limit}`}
+            </p>
           </div>
           <div className="rounded-xl border border-border bg-card p-6">
             <div className="flex items-center gap-3 mb-2">
               <BarChart3 className="h-5 w-5 text-primary" />
               <span className="text-sm text-muted-foreground">Total Conversions</span>
             </div>
-            <p className="text-2xl font-bold">0</p>
+            <p className="text-2xl font-bold">
+              {loading ? "—" : totalConversions.toLocaleString()}
+            </p>
           </div>
           <div className="rounded-xl border border-border bg-card p-6">
             <div className="flex items-center gap-3 mb-2">
-              <Key className="h-5 w-5 text-primary" />
+              {plan === "pro" ? (
+                <Crown className="h-5 w-5 text-warning" />
+              ) : (
+                <Key className="h-5 w-5 text-primary" />
+              )}
               <span className="text-sm text-muted-foreground">Plan</span>
             </div>
-            <p className="text-2xl font-bold">Free</p>
+            <div className="flex items-center gap-3">
+              <p className="text-2xl font-bold capitalize">{loading ? "—" : plan}</p>
+              {!loading && plan === "free" && (
+                <Link
+                  href="/pricing"
+                  className="text-xs text-primary hover:underline"
+                >
+                  Upgrade
+                </Link>
+              )}
+            </div>
           </div>
         </div>
 
@@ -108,18 +167,26 @@ export function DashboardContent() {
               </button>
             </div>
           ) : (
-            <button
-              onClick={generateKey}
-              disabled={generating}
-              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-hover transition-colors disabled:opacity-50"
-            >
-              {generating ? (
-                <RefreshCw className="h-4 w-4 animate-spin" />
-              ) : (
-                <Key className="h-4 w-4" />
+            <div>
+              <button
+                onClick={generateKey}
+                disabled={generating}
+                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-hover transition-colors disabled:opacity-50"
+              >
+                {generating ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Key className="h-4 w-4" />
+                )}
+                Generate API Key
+              </button>
+              {genError && (
+                <div className="mt-3 flex items-center gap-2 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-2 text-sm text-red-600 dark:text-red-400">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                  {genError}
+                </div>
               )}
-              Generate API Key
-            </button>
+            </div>
           )}
 
           {/* API usage example */}

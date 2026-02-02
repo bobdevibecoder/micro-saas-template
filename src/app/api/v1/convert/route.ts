@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jsonToCsv, csvToJson } from "@/lib/converter";
+import { supabase, checkConversionLimit, incrementConversions, logConversion } from "@/lib/supabase";
+import type { DbUser } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,11 +15,38 @@ export async function POST(req: NextRequest) {
     }
 
     const apiKey = authHeader.replace("Bearer ", "");
-
-    // TODO: Validate API key against Supabase when connected
-    // For now, accept any non-empty key for development
     if (!apiKey) {
       return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
+    }
+
+    // Validate API key against Supabase
+    const { data: user, error: userError } = await supabase
+      .from("users")
+      .select("*")
+      .eq("api_key", apiKey)
+      .single();
+
+    if (userError || !user) {
+      return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
+    }
+
+    const dbUser = user as DbUser;
+
+    // Only Pro users can use the API
+    if (dbUser.plan !== "pro") {
+      return NextResponse.json(
+        { error: "API access requires a Pro plan. Upgrade at /pricing" },
+        { status: 403 }
+      );
+    }
+
+    // Check rate limits (Pro = unlimited, but still track)
+    const { allowed, remaining } = await checkConversionLimit(dbUser);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Daily conversion limit reached." },
+        { status: 429 }
+      );
     }
 
     const body = await req.json();
@@ -38,13 +67,12 @@ export async function POST(req: NextRequest) {
     }
 
     let result: string;
+    const direction: "json_to_csv" | "csv_to_json" = to === "csv" ? "json_to_csv" : "csv_to_json";
 
     if (to === "csv") {
-      // data should be a JSON array or string
       const input = typeof data === "string" ? data : JSON.stringify(data);
       result = jsonToCsv(input);
     } else {
-      // data should be a CSV string
       if (typeof data !== "string") {
         return NextResponse.json(
           { error: "For CSV to JSON conversion, 'data' must be a CSV string." },
@@ -54,10 +82,18 @@ export async function POST(req: NextRequest) {
       result = csvToJson(data);
     }
 
+    // Log the conversion and increment counter
+    const inputSize = typeof data === "string" ? data.length : JSON.stringify(data).length;
+    await Promise.all([
+      logConversion(dbUser.id, direction, inputSize),
+      incrementConversions(dbUser.id),
+    ]);
+
     return NextResponse.json({
       success: true,
       format: to,
       result: to === "json" ? JSON.parse(result) : result,
+      remaining: remaining === Infinity ? "unlimited" : remaining - 1,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Conversion failed";
