@@ -1,0 +1,28 @@
+{
+  "title": "How to Convert JSON to CSV: The Complete Guide",
+  "description": "Learn the fastest ways to convert JSON data to CSV format. Free online tool, API access, and step-by-step instructions.",
+  "date": "2026-02-03",
+  "tags": ["guide", "json", "csv", "tutorial"],
+  "sections": [
+    {
+      "heading": "Why Convert JSON to CSV?",
+      "content": "JSON (JavaScript Object Notation) is the standard format for APIs and web applications. But when you need to analyze data in Excel, Google Sheets, or import into a database, CSV is often the required format.\n\nCommon use cases include exporting API data for spreadsheet analysis, preparing data for database imports, sharing data with non-technical team members, and creating reports from JSON-based systems."
+    },
+    {
+      "heading": "The Fastest Way: Use ConvertFlow",
+      "content": "ConvertFlow lets you convert JSON to CSV instantly in your browser. No signup required for free use.\n\n1. Paste your JSON data in the input panel\n2. Click \"Convert Now\"\n3. Copy or download your CSV\n\nYour data never leaves your browser — it's processed entirely client-side for maximum privacy."
+    },
+    {
+      "heading": "Handling Nested JSON Objects",
+      "content": "One challenge with JSON to CSV conversion is handling nested objects. For example, if your JSON has nested address fields like {street, city, state}, ConvertFlow automatically flattens these into separate CSV columns like address.street, address.city, and address.state.\n\nThis ensures no data is lost during conversion while maintaining a flat structure that spreadsheets can understand."
+    },
+    {
+      "heading": "Using the API for Automation",
+      "content": "Need to convert JSON to CSV programmatically? ConvertFlow Pro includes a REST API.\n\nSend a POST request to /api/v1/convert with your JSON data and receive CSV in response. Perfect for automated workflows, CI/CD pipelines, and data processing scripts.\n\nPro plan includes unlimited conversions, 50MB file support, and full API access at $19/month."
+    },
+    {
+      "heading": "JSON to CSV: Quick Reference",
+      "content": "JSON arrays of objects convert cleanly to CSV where each object becomes a row and each key becomes a column header.\n\nArrays of arrays need special handling — the first array typically becomes headers.\n\nNested objects get flattened with dot notation (parent.child).\n\nArrays within objects are joined with semicolons by default.\n\nNull values become empty CSV cells."
+    }
+  ]
+}
