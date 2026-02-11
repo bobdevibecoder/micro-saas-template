@@ -1,0 +1,20 @@
+Security Audit Progress - 2026-02-11
+=====================================
+
+COMPLETED:
+----------
+
+Story fix-001: Add rate limiting middleware for API endpoints
+- Created src/lib/rate-limit.ts with in-memory rate limiting logic
+- Updated src/middleware.ts to apply rate limiting to all /api/* routes
+- Returns 429 status with proper headers when limit exceeded (100 req/min)
+- Added regression tests in src/lib/rate-limit.test.ts
+- Build passes: npm run build
+- Lint passes: npm run lint
+- Tests pass: npm run test (5 tests)
+- Commit: 812b0a8 fix(security): add rate limiting middleware
+
+PENDING:
+--------
+- Story fix-002: (pending)
+- Story fix-003: (pending)
