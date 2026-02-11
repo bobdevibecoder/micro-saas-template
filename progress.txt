@@ -16,5 +16,16 @@ Story fix-001: Add rate limiting middleware for API endpoints
 
 PENDING:
 --------
-- Story fix-002: (pending)
+- Story fix-002: Strengthen RLS policies with service role validation
+- Updated supabase/schema.sql to use service_role-only policies
+- Replaced USING (true) policies with TO service_role restrictions
+- Added DROP POLICY IF EXISTS for old insecure policies
+- Added regression tests in src/lib/rls-policies.test.ts (7 tests)
+- Build passes: npm run build
+- Lint passes: npm run lint
+- Tests pass: npm run test (12 tests total)
+- Commit: 9666692 fix(security): strengthen RLS policies with service role validation
+
+PENDING:
+--------
 - Story fix-003: (pending)
