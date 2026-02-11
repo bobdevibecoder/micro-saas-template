@@ -41,15 +41,24 @@ $$ LANGUAGE sql;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE conversions ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies (service key bypasses these, needed for future client-side access)
-CREATE POLICY "Users can view own data" ON users
-  FOR SELECT USING (true);
+-- Drop existing policies if they exist (for migrations)
+DROP POLICY IF EXISTS "Users can view own data" ON users;
+DROP POLICY IF EXISTS "Users can update own data" ON users;
+DROP POLICY IF EXISTS "Users can view own conversions" ON conversions;
+DROP POLICY IF EXISTS "Users can insert own conversions" ON conversions;
+DROP POLICY IF EXISTS "Service role can manage users" ON users;
+DROP POLICY IF EXISTS "Service role can manage conversions" ON conversions;
 
-CREATE POLICY "Users can update own data" ON users
-  FOR UPDATE USING (true);
+-- RLS Policies - Only service role can access data
+-- This ensures that only the backend with service_role key can access the database
+CREATE POLICY "Service role can manage users" ON users
+  FOR ALL 
+  TO service_role
+  USING (true)
+  WITH CHECK (true);
 
-CREATE POLICY "Users can view own conversions" ON conversions
-  FOR SELECT USING (true);
-
-CREATE POLICY "Users can insert own conversions" ON conversions
-  FOR INSERT WITH CHECK (true);
+CREATE POLICY "Service role can manage conversions" ON conversions
+  FOR ALL 
+  TO service_role
+  USING (true)
+  WITH CHECK (true);
